@@ -4,14 +4,12 @@ import {
   comparePoses,
   calculatePoseConfidence,
   generateSessionId,
-  saveGameResults,
   GameResult,
   GameResults,
 } from '../utils/poseComparison';
 import {
   addScore as addHighScore,
   getTopScores,
-  exportScoresJSON,
 } from '../utils/highscores';
 import { saveScoreToFirestore, fetchTopScoresFromFirestore } from '../services/highscoreService';
 import cheersData from '../posesData/cheers.json';
@@ -32,7 +30,7 @@ type GameState = 'menu' | 'showing-image' | 'capturing' | 'comparing' | 'result'
 
 const POSES: PoseType[] = ['cheers', 'brindis', 'high-vibe', 'energy'];
 const TOTAL_ROUNDS = 4;
-const IMAGE_SHOW_TIME = 1; // segundos
+const IMAGE_SHOW_TIME = 4; // segundos (añadido 0.5s)
 const CAPTURE_TIME = 3; // segundos
 
 interface RoundData {
@@ -82,6 +80,7 @@ const PoseGame: React.FC = () => {
   const [currentRound, setCurrentRound] = useState(0);
   const [roundPoses, setRoundPoses] = useState<RoundData[]>([]);
   const [showImage, setShowImage] = useState(false);
+  const [showImageCountdown, setShowImageCountdown] = useState<number>(Math.ceil(IMAGE_SHOW_TIME));
   const [countdown, setCountdown] = useState(CAPTURE_TIME);
   const [currentScore, setCurrentScore] = useState(0);
   const [roundResults, setRoundResults] = useState<GameResult[]>([]);
@@ -95,6 +94,7 @@ const PoseGame: React.FC = () => {
 
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imageCountdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const roundIndexRef = useRef(0);
   const roundPosesRef = useRef<RoundData[]>([]);
   
@@ -240,13 +240,39 @@ const PoseGame: React.FC = () => {
   useEffect(() => {
     if (gameState === 'showing-image' && roundPosesRef.current.length > 0) {
       // Mostrar imagen por IMAGE_SHOW_TIME segundos
+      setShowImageCountdown(Math.ceil(IMAGE_SHOW_TIME));
+
+      // start a second-based countdown for display (integer seconds)
+      if (imageCountdownIntervalRef.current) {
+        clearInterval(imageCountdownIntervalRef.current);
+        imageCountdownIntervalRef.current = null;
+      }
+      imageCountdownIntervalRef.current = setInterval(() => {
+        setShowImageCountdown((prev) => {
+          if (prev <= 1) {
+            if (imageCountdownIntervalRef.current) {
+              clearInterval(imageCountdownIntervalRef.current);
+              imageCountdownIntervalRef.current = null;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
       const timer = setTimeout(() => {
         setShowImage(false);
         setGameState('capturing');
         startCapture();
       }, IMAGE_SHOW_TIME * 1000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        if (imageCountdownIntervalRef.current) {
+          clearInterval(imageCountdownIntervalRef.current);
+          imageCountdownIntervalRef.current = null;
+        }
+      };
     }
   }, [gameState]);
 
@@ -406,7 +432,6 @@ const PoseGame: React.FC = () => {
 
     setGameSummary(summary);
     setGameState('final-results');
-    saveGameResults(summary);
     // Guardar en highscores (localStorage)
     try {
       addHighScore({
@@ -434,10 +459,36 @@ const PoseGame: React.FC = () => {
   };
 
   const handleDownloadResults = () => {
-    if (gameSummary) {
-      saveGameResults(gameSummary);
-      setMessage('Resultados descargados');
-    }
+    (async () => {
+      try {
+        // Prefer remote scores if available, otherwise fetch them
+        const scores = remoteTopScores ?? await fetchTopScoresFromFirestore(100);
+        if (!scores || scores.length === 0) {
+          setMessage('No hay scores para descargar');
+          return;
+        }
+
+        // Convert to CSV
+        const headers = ['Name', 'Precision', 'Score', 'Date'];
+        const rows = scores.map((s: any) => [s.name, String(s.precision), String(s.score), s.date || '']);
+        const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `top_scores.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        setMessage('Scores descargados (CSV)');
+      } catch (e) {
+        console.error('Error descargando scores remotos:', e);
+        setMessage('Error al descargar scores');
+      }
+    })();
   };
 
   const handlePlayAgain = () => {
@@ -528,6 +579,11 @@ const PoseGame: React.FC = () => {
                 }}
                 className="pose-image"
               />
+              <div className="pose-image-overlay">
+                {showImageCountdown > 0 && (
+                  <div className="image-countdown">{showImageCountdown}</div>
+                )}
+              </div>
             </div>
 
             <div className="camera-section" style={{ display: showImage ? 'none' : 'block' }}>
@@ -610,19 +666,7 @@ const PoseGame: React.FC = () => {
             <button className="btn btn-success" onClick={handleDownloadResults}>
               Descargar resultados
             </button>
-            <button
-              className="btn btn-export"
-              onClick={() => {
-                try {
-                  exportScoresJSON();
-                  setMessage('Top scores exportados');
-                } catch (e) {
-                  console.warn(e);
-                }
-              }}
-            >
-              Exportar Top10
-            </button>
+            
           </div>
 
           <div className="highscores-list">

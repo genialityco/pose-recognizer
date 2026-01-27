@@ -111,6 +111,23 @@
 .pose-image-section h2 { color:#e6eef6; font-size:1.1rem; margin-bottom:18px; }
 .pose-image { width:100%; max-width:420px; aspect-ratio:1; margin:0 auto; border-radius:10px; object-fit:cover; box-shadow:0 16px 40px rgba(0,0,0,0.6); }
 
+/* Subtle floating animation for the pose image */
+@keyframes floatY {
+  0% { transform: translateY(-6px); }
+  50% { transform: translateY(6px); }
+  100% { transform: translateY(-6px); }
+}
+
+.pose-image {
+  will-change: transform;
+  transform-origin: center;
+  animation: floatY 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pose-image { animation: none; }
+}
+
 .camera-section { display:flex; justify-content:center; animation:fadeIn .4s ease; }
 .video-container { position:relative; width:100%; max-width:920px; aspect-ratio:16/9; background:#07101a; border-radius:10px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.7); }
 .video-element { width:100%; height:100%; display:block; }
@@ -165,6 +182,10 @@
   .pose-image { max-width:300px; }
   .final-accuracy { font-size:2.6rem; }
 }
+/* Countdown overlay on pose image */
+.pose-image-section { position: relative; }
+.pose-image-overlay { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.image-countdown { background: rgba(2,6,23,0.6); color: #e6eef6; padding: 10px 16px; border-radius: 999px; font-weight:800; font-size:1.5rem; box-shadow: 0 6px 18px rgba(0,0,0,0.5); pointer-events:auto; }
  
 
 /* Scrollbar */
