@@ -91,7 +91,6 @@ const PoseGame: React.FC = () => {
   const [message, setMessage] = useState('');
   const [poseDetected, setPoseDetected] = useState(false);
   const [playerName, setPlayerName] = useState('');
-  const [topScores, setTopScores] = useState<any[]>([]);
 
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -405,7 +404,6 @@ const PoseGame: React.FC = () => {
         score: summary.finalScore,
         date: new Date().toISOString(),
       });
-      setTopScores(getTopScores(10));
     } catch (e) {
       console.warn('No se pudo guardar highscore:', e);
     }
