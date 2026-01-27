@@ -13,6 +13,7 @@ import {
   getTopScores,
   exportScoresJSON,
 } from '../utils/highscores';
+import { saveScoreToFirestore, fetchTopScoresFromFirestore } from '../services/highscoreService';
 import cheersData from '../posesData/cheers.json';
 import brindisData from '../posesData/brindis.json';
 import highVibeData from '../posesData/high-vibe.json';
@@ -52,17 +53,16 @@ const getPoseData = (poseType: PoseType) => {
   }
 };
 
-const getPoseImage = (poseType: PoseType): string => {
-  switch (poseType) {
-    case 'cheers':
-      return cheersPose;
-    case 'brindis':
-      return brindosPose;
-    case 'high-vibe':
-      return highVibePose;
-    case 'energy':
-      return energyPose;
-  }
+const POSE_IMAGES: Record<PoseType, string> = {
+  cheers: cheersPose,
+  brindis: brindosPose,
+  'high-vibe': highVibePose,
+  energy: energyPose,
+};
+
+const getPoseImage = (poseType: PoseType | undefined): string | undefined => {
+  if (!poseType) return undefined;
+  return POSE_IMAGES[poseType];
 };
 
 const getReferenceLandmarks = (data: any): any[] => {
@@ -91,6 +91,7 @@ const PoseGame: React.FC = () => {
   const [message, setMessage] = useState('');
   const [poseDetected, setPoseDetected] = useState(false);
   const [playerName, setPlayerName] = useState('');
+  const [remoteTopScores, setRemoteTopScores] = useState<any[] | null>(null);
 
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -130,6 +131,16 @@ const PoseGame: React.FC = () => {
     };
 
     initPoseOnce();
+
+    // fetch top scores from Firestore on mount
+    (async () => {
+      try {
+        const remote = await fetchTopScoresFromFirestore(10);
+        if (mounted) setRemoteTopScores(remote);
+      } catch (e) {
+        console.warn('Could not fetch remote top scores on mount', e);
+      }
+    })();
 
     return () => {
       mounted = false;
@@ -378,7 +389,7 @@ const PoseGame: React.FC = () => {
     }
   };
 
-  const endGame = (results: GameResult[]) => {
+  const endGame = async (results: GameResult[]) => {
     const finalAccuracy = results.length > 0
       ? Math.round(results.reduce((sum, r) => sum + r.accuracy, 0) / results.length)
       : 0;
@@ -404,6 +415,19 @@ const PoseGame: React.FC = () => {
         score: summary.finalScore,
         date: new Date().toISOString(),
       });
+      // also persist to Firestore
+      try {
+        await saveScoreToFirestore({
+          name: playerName || 'Jugador',
+          precision: summary.finalAccuracy,
+          score: summary.finalScore,
+          date: new Date().toISOString(),
+        });
+        const remote = await fetchTopScoresFromFirestore(10);
+        setRemoteTopScores(remote);
+      } catch (e) {
+        console.warn('Error saving/fetching remote highscore:', e);
+      }
     } catch (e) {
       console.warn('No se pudo guardar highscore:', e);
     }
@@ -468,7 +492,7 @@ const PoseGame: React.FC = () => {
           <div className="highscores-preview">
             <h3>Top 10 Mejores Puntajes</h3>
             <ol>
-              {getTopScores(10).map((s, i) => (
+              {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
                 <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
               ))}
             </ol>
@@ -495,6 +519,13 @@ const PoseGame: React.FC = () => {
                 ref={imageRef}
                 src={getPoseImage(roundPoses[currentRound]?.poseType)}
                 alt={roundPoses[currentRound]?.poseType}
+                onError={(e) => {
+                  // Log the failing src to help debug deploy path issues
+                  const img = e.currentTarget as HTMLImageElement;
+                  console.warn('[PoseGame] Error cargando imagen:', img.src);
+                  img.style.display = 'none';
+                  setMessage('No se pudo cargar la imagen de referencia');
+                }}
                 className="pose-image"
               />
             </div>
@@ -549,11 +580,11 @@ const PoseGame: React.FC = () => {
             </div>
             <div className="score-stats">
               <div className="stat">
-                <span className="stat-label">Rondas Completadas</span>
+                <span className="stat-label">Rondas Completadas </span>
                 <span className="stat-value">{gameSummary.totalRounds}</span>
               </div>
               <div className="stat">
-                <span className="stat-label">Puntos Totales</span>
+                <span className="stat-label">Puntos Totales </span>
                 <span className="stat-value">{gameSummary.finalScore}</span>
               </div>
             </div>
@@ -597,7 +628,7 @@ const PoseGame: React.FC = () => {
           <div className="highscores-list">
             <h2>Top 10 Mejores Puntajes</h2>
             <ol>
-              {getTopScores(10).map((s, i) => (
+              {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
                 <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
               ))}
             </ol>
