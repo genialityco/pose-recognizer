@@ -504,49 +504,57 @@ const PoseGame: React.FC = () => {
   };
 
   return (
-    <div className="pose-game-container">
+    <div className={`pose-game-container ${gameState === 'menu' ? 'center-vertical' : ''}`}>
       {gameState === 'menu' && (
         <div className="menu-section">
-          <h1>Juego de Poses</h1>
-          <p className="subtitle">Replique las poses mostradas en pantalla.</p>
+          <div className="results-grid">
+            <div className="results-main">
+                  <h1 className="game-title">POSE PERFECT
+                    <span className="game-subtitle">the game</span>
+                  </h1>
+                  <p className="subtitle">Replique las poses mostradas en pantalla.</p>
 
-          <div className="player-name-input">
-            <label htmlFor="playerName">Nombre del jugador</label>
-            <input
-              id="playerName"
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Tu nombre"
-            />
-          </div>
+              <div className="player-name-input">
+                <label htmlFor="playerName">Nombre del jugador</label>
+                <input
+                  id="playerName"
+                  type="text"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="Tu nombre"
+                />
+              </div>
 
-          <div className="game-info">
-            <div className="info-card">
-              <span className="info-title">Rondas</span>
-              <span className="info-value">{TOTAL_ROUNDS}</span>
+              <div className="game-info">
+                <div className="info-card">
+                  <span className="info-title">Rondas</span>
+                  <span className="info-value">{TOTAL_ROUNDS}</span>
+                </div>
+                <div className="info-card">
+                  <span className="info-title">Tiempo por Pose</span>
+                  <span className="info-value">{IMAGE_SHOW_TIME}s</span>
+                </div>
+                <div className="info-card">
+                  <span className="info-title">Tiempo de Captura</span>
+                  <span className="info-value">{CAPTURE_TIME}s</span>
+                </div>
+              </div>
+
+              <button className="btn btn-play" onClick={startGame}>
+                JUGAR
+              </button>
             </div>
-            <div className="info-card">
-              <span className="info-title">Tiempo por Pose</span>
-              <span className="info-value">{IMAGE_SHOW_TIME}s</span>
-            </div>
-            <div className="info-card">
-              <span className="info-title">Tiempo de Captura</span>
-              <span className="info-value">{CAPTURE_TIME}s</span>
-            </div>
-          </div>
 
-          <button className="btn btn-play" onClick={startGame}>
-            JUGAR
-          </button>
-
-          <div className="highscores-preview">
-            <h3>Top 10 Mejores Puntajes</h3>
-            <ol>
-              {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
-                <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
-              ))}
-            </ol>
+            <aside className="results-side">
+              <div className="highscores-list card">
+                <h2>Top 10 Mejores Puntajes</h2>
+                <ol>
+                  {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
+                    <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
+                  ))}
+                </ol>
+              </div>
+            </aside>
           </div>
         </div>
       )}
@@ -629,53 +637,58 @@ const PoseGame: React.FC = () => {
         <div className="results-section">
           <h1>Resultados finales</h1>
 
-          <div className="final-score-card">
-            <div className="score-display">
-              <span className="final-accuracy">{gameSummary.finalAccuracy}%</span>
-              <span className="score-label">Precisión Final</span>
-            </div>
-            <div className="score-stats">
-              <div className="stat">
-                <span className="stat-label">Rondas Completadas </span>
-                <span className="stat-value">{gameSummary.totalRounds}</span>
-              </div>
-              <div className="stat">
-                <span className="stat-label">Puntos Totales </span>
-                <span className="stat-value">{gameSummary.finalScore}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounds-detail">
-            <h2>Detalles por Ronda</h2>
-            <div className="rounds-list">
-              {gameSummary.rounds.map((round, index) => (
-                <div key={index} className="round-detail-item">
-                  <span className="round-num">Ronda {round.round}</span>
-                  <span className="round-pose">{round.poseType.toUpperCase()}</span>
-                  <span className="round-accuracy">{round.accuracy}%</span>
+          <div className="results-grid">
+            <div className="results-main">
+              <div className="final-score-card">
+                <div className="score-display">
+                  <span className="final-accuracy">{gameSummary.finalAccuracy}%</span>
+                  <span className="score-label">Precisión Final</span>
                 </div>
-              ))}
+                <div className="score-stats">
+                  <div className="stat">
+                    <span className="stat-label">Rondas Completadas</span>
+                    <span className="stat-value">{gameSummary.totalRounds}</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-label">Puntos Totales</span>
+                    <span className="stat-value">{gameSummary.finalScore}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounds-detail">
+                <h2>Detalles por Ronda</h2>
+                <div className="rounds-list">
+                  {gameSummary.rounds.map((round, index) => (
+                    <div key={index} className="round-detail-item">
+                      <span className="round-num">Ronda {round.round}</span>
+                      <span className="round-pose">{round.poseType.toUpperCase()}</span>
+                      <span className="round-accuracy">{round.accuracy}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="action-buttons">
+                <button className="btn btn-primary" onClick={handlePlayAgain}>
+                  Jugar de nuevo
+                </button>
+                <button className="btn btn-success" onClick={handleDownloadResults}>
+                  Descargar resultados
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="action-buttons">
-            <button className="btn btn-primary" onClick={handlePlayAgain}>
-              Jugar de nuevo
-            </button>
-            <button className="btn btn-success" onClick={handleDownloadResults}>
-              Descargar resultados
-            </button>
-            
-          </div>
-
-          <div className="highscores-list">
-            <h2>Top 10 Mejores Puntajes</h2>
-            <ol>
-              {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
-                <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
-              ))}
-            </ol>
+            <aside className="results-side">
+              <div className="highscores-list card">
+                <h2>Top 10 Mejores Puntajes</h2>
+                <ol>
+                  {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
+                    <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
+                  ))}
+                </ol>
+              </div>
+            </aside>
           </div>
         </div>
       )}

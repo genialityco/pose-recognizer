@@ -1,20 +1,61 @@
 .pose-game-container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #071022 0%, #0b1220 100%);
-  padding: 30px 20px;
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@700;800&display=swap');
+  background-image: url('../assets/background.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  /* subtle dark overlay to keep text readable */
+  background-color: rgba(7,16,34,0.65);
+  background-blend-mode: overlay;
+  
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #e6eef6;
 }
 
-/* Menu Section */
+/* Center the container vertically when needed (only applied in menu state via class) */
+.center-vertical {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hide scrollbars visually but keep scrolling available */
+html, body, .pose-game-container {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.pose-game-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Menu Section (main card) */
 .menu-section {
-  max-width: 720px;
+  max-width: 920px;
   margin: 0 auto;
   text-align: center;
-  padding: 44px 28px;
+  padding: 44px 32px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
+  border: 1px solid rgba(90,160,255,0.10);
+  position: relative;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: blueGlow 3.6s ease-in-out infinite;
+}
+
+@keyframes blueGlow {
+  0% {
+    box-shadow: 0 8px 28px rgba(0,0,0,0.6), 0 0 6px rgba(30,144,255,0.06);
+    border-color: rgba(90,160,255,0.06);
+  }
+  50% {
+    box-shadow: 0 16px 48px rgba(0,0,0,0.65), 0 0 28px rgba(30,144,255,0.28);
+    border-color: rgba(90,160,255,0.28);
+  }
+  100% {
+    box-shadow: 0 8px 28px rgba(0,0,0,0.6), 0 0 6px rgba(30,144,255,0.06);
+    border-color: rgba(90,160,255,0.06);
+  }
 }
 
 @keyframes slideUp {
@@ -22,11 +63,25 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.menu-section h1 {
-  font-size: 2.1rem;
+.game-title {
+  font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 2.6rem;
   color: #e6eef6;
-  margin-bottom: 6px;
-  font-weight: 700;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.game-subtitle {
+  display: block;
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #aebfd0;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+  margin-top: 6px;
 }
 
 .subtitle {
@@ -54,6 +109,44 @@
 .highscores-list h2 { margin-bottom:8px; color:#cfe3f7; font-size:1rem; }
 .highscores-list ol { margin:0; padding-left:18px; color:#bcd3e8; }
 .highscores-list li { padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.02); }
+
+/* Results layout: main + side (highscores) */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+.results-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.results-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.highscores-list.card {
+  background: rgba(18,18,18,0.75);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+.highscores-list h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.05rem;
+}
+.highscores-list ol {
+  margin: 0;
+  padding-left: 18px;
+}
+.highscores-list li {
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
 
 .game-info {
   display: grid;
@@ -174,6 +267,11 @@
   .results-section { padding:20px; }
   .action-buttons { flex-direction:column; }
   .btn { width:100%; }
+  /* Stack results columns on small screens */
+  .results-grid { grid-template-columns: 1fr; }
+  .results-side { order: 2; }
+  .results-main { order: 1; }
+  .highscores-list.card { margin-top: 6px; }
 }
 
 @media (max-width: 480px) {
