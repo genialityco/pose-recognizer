@@ -12,6 +12,8 @@ import {
   getTopScores,
 } from '../utils/highscores';
 import { saveScoreToFirestore, fetchTopScoresFromFirestore } from '../services/highscoreService';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 import cheersData from '../posesData/cheers.json';
 import brindisData from '../posesData/brindis.json';
 import highVibeData from '../posesData/high-vibe.json';
@@ -90,7 +92,9 @@ const PoseGame: React.FC = () => {
   const [message, setMessage] = useState('');
   const [poseDetected, setPoseDetected] = useState(false);
   const [playerName, setPlayerName] = useState('');
+  const [playerNameError, setPlayerNameError] = useState('');
   const [remoteTopScores, setRemoteTopScores] = useState<any[] | null>(null);
+  const [remotePoses, setRemotePoses] = useState<Record<string, any> | null>(null);
 
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -132,13 +136,28 @@ const PoseGame: React.FC = () => {
 
     initPoseOnce();
 
-    // fetch top scores from Firestore on mount
+    // fetch top scores and remote poses from Firestore on mount
     (async () => {
       try {
         const remote = await fetchTopScoresFromFirestore(10);
         if (mounted) setRemoteTopScores(remote);
       } catch (e) {
         console.warn('Could not fetch remote top scores on mount', e);
+      }
+
+      try {
+        const posesCol = collection(db, 'poses');
+        const snap = await getDocs(posesCol);
+        const map: Record<string, any> = {};
+        snap.docs.forEach((d) => {
+          const data = d.data() as any;
+          if (data && data.poseType) {
+            map[data.poseType] = data;
+          }
+        });
+        if (mounted) setRemotePoses(map);
+      } catch (e) {
+        console.warn('Could not fetch remote poses on mount', e);
       }
     })();
 
@@ -300,14 +319,16 @@ const PoseGame: React.FC = () => {
 
   const startGame = () => {
     if (!playerName || playerName.trim().length === 0) {
-      setMessage('Por favor ingresa tu nombre antes de jugar');
+      const err = 'Por favor ingresa tu nombre';
+      setPlayerNameError(err);
+      setMessage(err);
       return;
     }
     // Barajar poses
     const shuffledPoses = [...POSES].sort(() => Math.random() - 0.5);
     const rounds: RoundData[] = shuffledPoses.slice(0, TOTAL_ROUNDS).map((pose) => ({
       poseType: pose,
-      referenceData: getPoseData(pose),
+      referenceData: (remotePoses && remotePoses[pose]) ? remotePoses[pose] : getPoseData(pose),
     }));
 
     roundPosesRef.current = rounds;
@@ -520,9 +541,10 @@ const PoseGame: React.FC = () => {
                   id="playerName"
                   type="text"
                   value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
+                  onChange={(e) => { setPlayerName(e.target.value); if (playerNameError) setPlayerNameError(''); }}
                   placeholder="Tu nombre"
                 />
+                {playerNameError && <span className="input-error">{playerNameError}</span>}
               </div>
 
               <div className="game-info">
@@ -550,7 +572,25 @@ const PoseGame: React.FC = () => {
                 <h2>Top 10 Mejores Puntajes</h2>
                 <ol>
                   {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
-                    <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
+                    <li key={i} className="hs-item">
+                      <span className="pos-badge">
+                        {i < 3 ? (
+                          <span className={`medal ${i === 0 ? 'gold' : i === 1 ? 'silver' : 'bronze'}`} title={i === 0 ? 'Primero' : i === 1 ? 'Segundo' : 'Tercero'}>
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
+                          </span>
+                        ) : (
+                          <span className="position">{i + 1}</span>
+                        )}
+                      </span>
+                      <div className="hs-left">
+                        <span className="hs-name">{s.name}</span>
+                        {s.date && <span className="hs-date">{new Date(s.date).toLocaleDateString()}</span>}
+                      </div>
+                      <div className="hs-right">
+                        <span className="hs-precision">{s.precision}%</span>
+                        <span className="hs-score">{s.score}</span>
+                      </div>
+                    </li>
                   ))}
                 </ol>
               </div>
@@ -684,7 +724,25 @@ const PoseGame: React.FC = () => {
                 <h2>Top 10 Mejores Puntajes</h2>
                 <ol>
                   {(remoteTopScores ?? getTopScores(10)).map((s, i) => (
-                    <li key={i}>{s.name} — Precisión: {s.precision}% — Puntos: {s.score}</li>
+                    <li key={i} className="hs-item">
+                      <span className="pos-badge">
+                        {i < 3 ? (
+                          <span className={`medal ${i === 0 ? 'gold' : i === 1 ? 'silver' : 'bronze'}`} title={i === 0 ? 'Primero' : i === 1 ? 'Segundo' : 'Tercero'}>
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
+                          </span>
+                        ) : (
+                          <span className="position">{i + 1}</span>
+                        )}
+                      </span>
+                      <div className="hs-left">
+                        <span className="hs-name">{s.name}</span>
+                        {s.date && <span className="hs-date">{new Date(s.date).toLocaleDateString()}</span>}
+                      </div>
+                      <div className="hs-right">
+                        <span className="hs-precision">{s.precision}%</span>
+                        <span className="hs-score">{s.score}</span>
+                      </div>
+                    </li>
                   ))}
                 </ol>
               </div>

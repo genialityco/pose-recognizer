@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PoseType, PoseData, savePoseToJSON, loadPosesFromJSON } from '../utils/poseDetection';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 import '../styles/PoseCapture.css';
 
 const POSES: PoseType[] = ['cheers', 'brindis', 'high-vibe', 'energy'];
@@ -262,6 +264,43 @@ const PoseCapture: React.FC = () => {
     setMessage('Archivo JSON descargado');
   };
 
+  const savePoseToFirestore = async (pose: PoseData) => {
+    try {
+      const posesCol = collection(db, 'poses');
+      const q = query(posesCol, where('poseType', '==', pose.poseType));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        await addDoc(posesCol, {
+          poseType: pose.poseType,
+          timestamp: pose.timestamp,
+          landmarks: pose.landmarks,
+          confidence: pose.confidence,
+          createdAt: serverTimestamp(),
+        });
+        setMessage(`Pose ${pose.poseType} guardada en Firestore`);
+      } else {
+        // Update existing documents with same poseType (update all matches)
+        const updates = snap.docs.map(async (d) => {
+          const ref = doc(db, 'poses', d.id);
+          return updateDoc(ref, {
+            poseType: pose.poseType,
+            timestamp: pose.timestamp,
+            landmarks: pose.landmarks,
+            confidence: pose.confidence,
+            updatedAt: serverTimestamp(),
+          });
+        });
+        await Promise.all(updates);
+        setMessage(`Pose ${pose.poseType} actualizada en Firestore`);
+      }
+    } catch (error) {
+      console.error('Error saving pose to Firestore:', error);
+      setMessage('Error guardando pose en Firestore');
+    }
+    setTimeout(() => setMessage(''), 2500);
+  };
+
   const handleUploadJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -347,13 +386,16 @@ const PoseCapture: React.FC = () => {
           <div className="poses-list">
             {capturedPoses.map((pose, index) => (
               <div key={index} className="pose-item">
-                <span className="pose-type">{pose.poseType.toUpperCase()}</span>
-                <span className="pose-time">
-                  {new Date(pose.timestamp).toLocaleTimeString()}
-                </span>
-                <span className="pose-confidence">
-                  Confianza: {(pose.confidence * 100).toFixed(1)}%
-                </span>
+                <div className="pose-left">
+                  <span className="pose-type">{pose.poseType.toUpperCase()}</span>
+                  <span className="pose-time">
+                    {new Date(pose.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+                <div className="pose-right">
+                  <span className="pose-confidence">Confianza: {(pose.confidence * 100).toFixed(1)}%</span>
+                  <button className="btn btn-secondary" onClick={() => savePoseToFirestore(pose)}>Guardar</button>
+                </div>
               </div>
             ))}
           </div>

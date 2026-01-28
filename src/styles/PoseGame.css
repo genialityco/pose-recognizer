@@ -98,6 +98,21 @@ html, body, .pose-game-container {
 .player-name-input input::placeholder { color: #8ea0b6; }
 .player-name-input input:focus { box-shadow:0 8px 20px rgba(6,18,33,0.6); transform:translateY(-2px); border-color: rgba(127,170,255,0.18); }
 
+/* Input error styles */
+.player-name-input input.error, .player-name-input input:invalid {
+  border-color: rgba(255,100,100,0.9);
+  box-shadow: 0 8px 20px rgba(255,80,80,0.06);
+}
+.input-error {
+  color: #ffd6d6;
+  background: rgba(255,80,80,0.04);
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
 /* Highscores preview (menu) */
 .highscores-preview { margin-top:18px; text-align:left; color:#d8e6f2; }
 .highscores-preview h3 { font-size:1rem; margin-bottom:8px; color:#cfe3f7; }
@@ -108,7 +123,121 @@ html, body, .pose-game-container {
 .highscores-list { margin-top:18px; padding:16px; background: rgba(255,255,255,0.01); border-radius:10px; }
 .highscores-list h2 { margin-bottom:8px; color:#cfe3f7; font-size:1rem; }
 .highscores-list ol { margin:0; padding-left:18px; color:#bcd3e8; }
-.highscores-list li { padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.02); }
+.highscores-list li { padding:6px 8px; border-bottom:1px dashed rgba(255,255,255,0.02); }
+
+/* Highscore item richer typography (tighter spacing) */
+.hs-item {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.hs-left { display:flex; flex-direction:column; gap:2px; }
+.hs-name {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  font-weight:700;
+  font-size:0.98rem;
+  color:#eaf4ff;
+  letter-spacing:0.4px;
+}
+.hs-date {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size:0.72rem;
+  color:#9fb0c1;
+}
+.hs-right { display:flex; align-items:center; gap:8px; }
+.hs-precision {
+  background: linear-gradient(90deg, rgba(80,200,255,0.14), rgba(60,140,255,0.08));
+  color:#cfeefe;
+  padding:4px 8px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:0.86rem;
+  box-shadow: 0 3px 8px rgba(20,90,160,0.06);
+}
+.hs-score {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  font-size:0.98rem;
+  font-weight:800;
+  color: #dff6ff;
+  padding:4px 8px;
+  border-radius:8px;
+  background: linear-gradient(180deg, rgba(10,24,40,0.2), rgba(10,24,40,0.06));
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 -6px 12px rgba(255,255,255,0.02);
+}
+
+/* Medal badges for top positions */
+.medal {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  font-size:1.05rem;
+  margin-right:8px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+}
+.medal.gold { background: linear-gradient(180deg,#ffd86b,#e6b800); }
+.medal.silver { background: linear-gradient(180deg,#e6e8eb,#bfc6cc); }
+.medal.bronze { background: linear-gradient(180deg,#f0c6a8,#c48757); }
+
+/* Badge container: fixed size so layout doesn't change */
+.pos-badge {
+  width: 36px;
+  height: 36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex: 0 0 36px;
+  margin-right:8px;
+  position:relative;
+}
+
+/* Make the medal visually larger using transform, without increasing container size */
+.medal {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.1rem;
+  transform: scale(1.45);
+  transform-origin: center;
+}
+
+.position {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  color:#0b1220;
+  background: linear-gradient(180deg, #f2f5f9, #d0e6fb);
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  font-size:0.95rem;
+  transform: scale(1.15);
+}
+
+/* Stylize main numeric displays */
+.final-accuracy {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  font-weight:900;
+  font-size:3.2rem;
+  background: linear-gradient(90deg, #9fe9ff, #6fb8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 6px 18px rgba(40,120,200,0.12);
+}
+.stat-value, .current-score {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  font-weight:800;
+  color:#dff6ff;
+}
 
 /* Results layout: main + side (highscores) */
 .results-grid {

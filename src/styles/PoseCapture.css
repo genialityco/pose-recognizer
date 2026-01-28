@@ -241,10 +241,13 @@
 .pose-confidence {
   color: #764ba2;
   font-weight: 600;
-  text-align: right;
-}
-
-.file-actions {
+.pose-item { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:8px 12px; background: rgba(255,255,255,0.02); border-radius:8px; }
+.pose-left { display:flex; flex-direction:column; gap:4px; }
+.pose-right { display:flex; align-items:center; gap:8px; }
+.pose-type { font-weight:800; color:#e6eef6; font-family: 'Montserrat', sans-serif; }
+.pose-time { font-size:0.82rem; color:#9fb0c1; }
+.pose-confidence { font-weight:700; color:#cfeefe; margin-right:6px; }
+.btn-secondary { background:transparent; border:1px solid rgba(255,255,255,0.06); color:#e6eef6; padding:6px 10px; border-radius:8px; cursor:pointer; }
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
